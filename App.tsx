@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface ShoppingItem {
   id: string;
@@ -10,6 +11,41 @@ interface ShoppingItem {
 export default function ShoppingList() {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [newItemName, setNewItemName] = useState('');
+
+
+  //Função para carregar a lista armazenada no AsyncStorage
+  const loadItems = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem('@shopping_list');
+      return jsonValue != null ? JSON.parse(jsonValue) : [];
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  //Função para salvar os items no AsyncStorage
+  const saveItems = async (items: ShoppingItem[]) => {
+    try {
+      const jsonValue = JSON.stringify(items);
+      await AsyncStorage.setItem('@shopping_list', jsonValue);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  //Carrega os itens ao montar o componente
+  useEffect(() => {
+    const fetchItems = async () => {
+      const loadedItems = await loadItems();
+      setItems(loadedItems);
+    };
+    fetchItems();
+  }, []);
+
+  //Salva os itens sempre que a lista mudar
+  useEffect(() => {
+    saveItems(items);
+  }, [items]);
 
   //Função pra adicionar item à lista
   const addItem = () => {
